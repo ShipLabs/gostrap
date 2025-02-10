@@ -73,7 +73,11 @@ func getPackageName() string {
 
 	select {
 	case name := <-nameChan:
-		return name
+		if strings.TrimSpace(name) == "" {
+			fmt.Println("\nValid package name needed.")
+			os.Exit(0)
+		}
+		return name[:len(name)-1]
 	case <-signalChan:
 		fmt.Println("\nOperation cancelled.")
 		os.Exit(0)
