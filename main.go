@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"strings"
 	"syscall"
 )
 
@@ -45,7 +46,7 @@ func initGoMod(pkgName string) error {
 	return cmd.Run()
 }
 
-func createDirs() {
+func createDirs() error {
 	dirs := []string{
 		"cmd/app",
 		"internal/app/handlers",
@@ -61,12 +62,16 @@ func createDirs() {
 
 	for _, dir := range dirs {
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			log.Fatalf("Error creating directory %s: %v", dir, err)
+			log.Printf("Error creating directory %s: %v", dir, err)
+			return err
 		}
+		createdDirs = append(createdDirs, dir)
 	}
+
+	return nil
 }
 
-func createFiles() {
+func createFiles() error {
 	files := map[string]string{
 		".env":       "",
 		".gitignore": "*.log\n*.tmp\n*.env",
@@ -76,46 +81,39 @@ func createFiles() {
 	for file, content := range files {
 		f, err := os.Create(file)
 		if err != nil {
-			log.Fatalf("Error creating file %s: %v", file, err)
+			log.Printf("Error creating file %s: %v", file, err)
+			return err
 		}
+		createdFiles = append(createdFiles, file)
 
 		if content != "" {
-			_, err = io.WriteString(f, content)
+			_, _ = io.WriteString(f, content)
 			f.Close()
 		}
 	}
+
+	return nil
 }
 
-func getPackageName() string {
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-	nameChan := make(chan string, 1)
-
-	go func() {
-		<-signalChan
-		fmt.Println("\nOperation cancelled.")
-		os.Exit(0)
-	}()
-
-	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Enter package name: ")
-	name, err := reader.ReadString('\n')
-	if err != nil {
-		log.Fatalf("Error reading package name: %v", err)
+func cleanUp() {
+	var err error
+	msg := "Error during cleanup, please cleanup manually"
+	for _, dir := range createdDirs {
+		err = os.RemoveAll(dir)
+		if err != nil {
+			log.Fatalf("%s", msg)
+			os.Exit(1)
+		}
 	}
 
-	if strings.TrimSpace(name) == "" {
-		log.Fatalf("Please enter a valid package name")
+	for _, file := range createdFiles {
+		err = os.Remove(file)
+		if err != nil {
+			log.Fatalf("%s", msg)
+			os.Exit(1)
+		}
 	}
-
-	return name[:len(name)-1]
 }
-
-//program will accept packagename only
-//first initgomod
-//create dirs
-//create files
-//can I make it revert to original state if it encounters an error at any point??
 
 func main() {
 	pkgName := getPackageName()
@@ -123,7 +121,14 @@ func main() {
 		log.Fatalf("Error initializing go module: %v", err)
 		return
 	}
-	createDirs()
-	createFiles()
+
+	if err := createDirs(); err != nil {
+		cleanUp()
+	}
+
+	if err := createFiles(); err != nil {
+		cleanUp()
+	}
+
 	log.Println("Project structure created successfully.")
 }
