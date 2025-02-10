@@ -65,25 +65,23 @@ func getPackageName() string {
 	nameChan := make(chan string, 1)
 
 	go func() {
-		reader := bufio.NewReader(os.Stdin)
-		fmt.Println("Enter package name: ")
-		name, _ := reader.ReadString('\n')
-		nameChan <- name
-	}()
-
-	select {
-	case name := <-nameChan:
-		if strings.TrimSpace(name) == "" {
-			fmt.Println("\nValid package name needed.")
-			os.Exit(0)
-		}
-		return name[:len(name)-1]
-	case <-signalChan:
+		<-signalChan
 		fmt.Println("\nOperation cancelled.")
 		os.Exit(0)
+	}()
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter package name: ")
+	name, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatalf("Error reading package name: %v", err)
 	}
 
-	return ""
+	if strings.TrimSpace(name) == "" {
+		log.Fatalf("Please enter a valid package name")
+	}
+
+	return name[:len(name)-1]
 }
 
 //program will accept packagename only
