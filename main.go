@@ -11,6 +11,33 @@ import (
 	"syscall"
 )
 
+var createdDirs = make([]string, 0)
+var createdFiles = make([]string, 0)
+
+func getPackageName() string {
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-signalChan
+		fmt.Println("\nOperation cancelled.")
+		os.Exit(0)
+	}()
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Enter package name: ")
+	name, err := reader.ReadString('\n')
+	if err != nil {
+		log.Fatalf("Error reading package name: %v", err)
+	}
+
+	if strings.TrimSpace(name) == "" {
+		log.Fatalf("Please enter a valid package name")
+	}
+
+	return name[:len(name)-1]
+}
+
 func initGoMod(pkgName string) error {
 	cmd := exec.Command("go", "mod", "init", pkgName)
 	cmd.Stdout = os.Stdout
