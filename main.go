@@ -57,6 +57,7 @@ func createDirs() error {
 		"internal/pkg/logger",
 		"internal/pkg/config",
 		"pkg/shared",
+		"tests/mocks",
 		"api/v1",
 		"scripts",
 	}
@@ -74,9 +75,12 @@ func createDirs() error {
 
 func createFiles() error {
 	files := map[string]string{
-		".env":       "",
-		".gitignore": "*.log\n*.tmp\n*.env",
-		"main.go":    "package main\n\nfunc main() {\n\t// TODO: Implement main function\n}\n",
+		".env":         "",
+		".env.example": "",
+		".gitignore":   "*.log\n*.tmp\n*.env",
+		"main.go":      "package main\n\nfunc main() {\n\t// TODO: Implement main function\n}\n",
+		"Makefile":     "",
+		"README.md":    "",
 	}
 
 	for file, content := range files {
