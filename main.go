@@ -51,6 +51,7 @@ func createDirs() error {
 		"cmd/app",
 		"internal/app/handlers",
 		"internal/app/models",
+		"internal/app/repositories",
 		"internal/app/services",
 		"internal/pkg/db",
 		"internal/pkg/logger",
